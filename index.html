@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estoque — Pinos Macho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --surface2: #f0efeb;
+      --border: rgba(0,0,0,0.08);
+      --border-strong: rgba(0,0,0,0.15);
+      --text: #1a1a18;
+      --text-muted: #6b6b67;
+      --text-faint: #9d9d99;
+      --green: #3B6D11;
+      --green-bg: #EAF3DE;
+      --green-text: #27500A;
+      --amber: #854F0B;
+      --amber-bg: #FAEEDA;
+      --amber-text: #633806;
+      --red: #A32D2D;
+      --red-bg: #FCEBEB;
+      --red-text: #791F1F;
+      --blue: #185FA5;
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #18181a;
+        --surface: #222224;
+        --surface2: #2a2a2c;
+        --border: rgba(255,255,255,0.08);
+        --border-strong: rgba(255,255,255,0.15);
+        --text: #f0efe9;
+        --text-muted: #9d9d99;
+        --text-faint: #6b6b67;
+        --green: #97C459;
+        --green-bg: #173404;
+        --green-text: #C0DD97;
+        --amber: #EF9F27;
+        --amber-bg: #412402;
+        --amber-text: #FAC775;
+        --red: #E24B4A;
+        --red-bg: #501313;
+        --red-text: #F7C1C1;
+        --blue: #85B7EB;
+      }
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: var(--text);
+    }
+    .header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .ref-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface2);
+      border: 0.5px solid var(--border-strong);
+      border-radius: 20px;
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 4px 12px;
+      margin-top: 8px;
+    }
+    .btn-edit {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border-radius: var(--radius);
+      border: 0.5px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s;
+      text-decoration: none;
+    }
+    .btn-edit:hover { background: var(--surface2); }
+
+    /* ── METRICS ── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 1.75rem;
+    }
+    .metric {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+    }
+    .metric-label {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-faint);
+      margin-bottom: 8px;
+    }
+    .metric-value { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1; }
+    .metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+    .metric-value.green { color: var(--green); }
+    .metric-value.red   { color: var(--red); }
+
+    /* ── SECTION TITLE ── */
+    .sec { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-faint); margin-bottom: 12px; }
+
+    /* ── BRAND CARDS ── */
+    .brand-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin-bottom: 1.75rem;
+    }
+    .brand-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+    }
+    .brand-card.alert-low  { border-color: var(--amber); }
+    .brand-card.alert-out  { border-color: var(--red); }
+    .brand-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .brand-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .badge-ok  { background: var(--green-bg);  color: var(--green-text); }
+    .badge-low { background: var(--amber-bg);  color: var(--amber-text); }
+    .badge-out { background: var(--red-bg);    color: var(--red-text); }
+    .brand-saldo { font-size: 32px; font-weight: 600; line-height: 1; color: var(--text); }
+    .brand-saldo.ok  { color: var(--green); }
+    .brand-saldo.low { color: var(--amber); }
+    .brand-saldo.out { color: var(--red); }
+    .brand-pct { font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-bottom: 14px; }
+    .brand-stats {
+      display: flex;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 0.5px solid var(--border);
+    }
+    .brand-stat { text-align: center; }
+    .brand-stat strong { display: block; font-size: 14px; font-weight: 600; }
+    .brand-stat span { font-size: 11px; color: var(--text-muted); }
+    .c-red   { color: var(--red); }
+    .c-green { color: var(--green); }
+
+    /* ── CHARTS ── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 1.75rem;
+    }
+    @media (max-width: 600px) { .charts-row { grid-template-columns: 1fr; } }
+    .chart-panel {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+    }
+    .chart-wrap { position: relative; height: 220px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+    /* ── MODAL (editor de dados) ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 640px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      border: 0.5px solid var(--border-strong);
+    }
+    .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .modal p  { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+    .modal-tabs { display: flex; gap: 0; margin-bottom: 20px; border: 0.5px solid var(--border-strong); border-radius: var(--radius); overflow: hidden; }
+    .modal-tab {
+      flex: 1;
+      padding: 9px;
+      font-size: 13px;
+      font-family: inherit;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: background 0.15s;
+    }
+    .modal-tab.active { background: var(--surface2); color: var(--text); font-weight: 500; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .field-group { margin-bottom: 16px; }
+    .field-group label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .field-group input, .field-group select {
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      background: var(--surface2);
+      border: 0.5px solid var(--border-strong);
+      border-radius: var(--radius);
+      color: var(--text);
+      outline: none;
+    }
+    .field-group input:focus, .field-group select:focus { border-color: var(--blue); }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn-add {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-add:hover { opacity: 0.85; }
+    .btn-cancel {
+      display: inline-flex;
+      align-items: center;
+      padding: 9px 18px;
+      background: transparent;
+      border: 0.5px solid var(--border-strong);
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .btn-cancel:hover { background: var(--surface2); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+    /* ── MOVIMENTAÇÕES TABLE ── */
+    .table-panel {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      margin-bottom: 2rem;
+    }
+    .table-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-faint);
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 0.5px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 0.5px solid var(--border);
+      color: var(--text);
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--surface2); }
+    .btn-del {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-faint);
+      font-size: 14px;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    .btn-del:hover { color: var(--red); background: var(--red-bg); }
+
+    .footer { text-align: center; font-size: 12px; color: var(--text-faint); padding-top: 1rem; }
+    .prog-bar-bg { height: 4px; background: var(--surface2); border-radius: 2px; margin-top: 8px; }
+    .prog-bar { height: 4px; border-radius: 2px; background: var(--green); transition: width 0.4s; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <h1>Estoque — Pinos Macho</h1>
+      <p>Saldo atual = Estoque inicial − Retiradas + Retornos</p>
+      <span class="ref-tag"><i class="fa-regular fa-calendar"></i> Referência: 06/04/26</span>
+    </div>
+    <button class="btn-edit" onclick="openModal()">
+      <i class="fa-solid fa-pen-to-square"></i> Editar dados
+    </button>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics" id="metrics"></div>
+
+  <!-- BRAND CARDS -->
+  <div class="sec">Saldo por marca</div>
+  <div class="brand-grid" id="brand-grid"></div>
+
+  <!-- CHARTS -->
+  <div class="charts-row">
+    <div class="chart-panel">
+      <div class="sec">Distribuição do saldo</div>
+      <div class="legend" id="legend-pizza"></div>
+      <div class="chart-wrap"><canvas id="chartPizza" role="img" aria-label="Rosca com saldo por marca"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="sec">Retiradas vs Retornos</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#E24B4A"></span>Retirado</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#639922"></span>Retornado</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chartBars" role="img" aria-label="Barras com retiradas e retornos por marca"></canvas></div>
+    </div>
+  </div>
+
+  <!-- MOVIMENTAÇÕES -->
+  <div class="table-panel">
+    <div class="table-header-row">
+      <div class="sec" style="margin:0">Histórico de movimentações</div>
+      <button class="btn-edit" onclick="openModal('mov')">
+        <i class="fa-solid fa-plus"></i> Adicionar
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Marca</th>
+            <th>Tipo</th>
+            <th style="text-align:right">Quantidade</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="mov-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">SpaceVis · Dashboard Pinos Macho</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h2>Editar dados</h2>
+    <p>Atualize o estoque inicial ou registre uma movimentação.</p>
+
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchTab('estoque', this)">Estoque inicial</button>
+      <button class="modal-tab" onclick="switchTab('mov', this)">Movimentação</button>
+    </div>
+
+    <!-- TAB: estoque inicial -->
+    <div class="tab-content active" id="tab-estoque">
+      <div class="field-group">
+        <label>Marca</label>
+        <select id="edit-marca-est">
+          <option value="AllFlex">AllFlex</option>
+          <option value='"AllFlex"'>"AllFlex"</option>
+          <option value="DataMars">DataMars</option>
+          <option value="UHF">UHF</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Nova quantidade inicial</label>
+        <input type="number" id="edit-qtd-est" placeholder="ex: 5000" min="0" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+        <button class="btn-add" onclick="salvarEstoqueInicial()"><i class="fa-solid fa-check"></i> Salvar</button>
+      </div>
+    </div>
+
+    <!-- TAB: movimentação -->
+    <div class="tab-content" id="tab-mov">
+      <div class="row2">
+        <div class="field-group">
+          <label>Tipo</label>
+          <select id="mov-tipo">
+            <option value="retirada">Retirada</option>
+            <option value="retorno">Retorno</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Marca</label>
+          <select id="mov-marca">
+            <option value="AllFlex">AllFlex</option>
+            <option value='"AllFlex"'>"AllFlex"</option>
+            <option value="DataMars">DataMars</option>
+            <option value="UHF">UHF</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field-group">
+          <label>Quantidade</label>
+          <input type="number" id="mov-qtd" placeholder="ex: 50" min="1" />
+        </div>
+        <div class="field-group">
+          <label>Data</label>
+          <input type="text" id="mov-data" placeholder="ex: 06/05" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+        <button class="btn-add" onclick="salvarMovimentacao()"><i class="fa-solid fa-plus"></i> Registrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DADOS (edite aqui para atualizar o dashboard) ──────────────────────────
+const estoqueInicial = {
+  'AllFlex':    4724,
+  '"AllFlex"':  695,
+  'DataMars':   500,
+  'UHF':        349,
+};
+
+let retiradas = [
+  { marca: 'AllFlex',   qtd: 356, data: '06/04' },
+  { marca: '"AllFlex"', qtd: 100, data: '24/04' },
+  { marca: 'DataMars',  qtd: 50,  data: '24/04' },
+  { marca: 'AllFlex',   qtd: 175, data: '24/04' },
+];
+
+let retornos = [
+  { marca: '"AllFlex"', qtd: 5,  data: '25/04' },
+  { marca: 'DataMars',  qtd: 25, data: '25/04' },
+  { marca: 'AllFlex',   qtd: 5,  data: '25/05' },
+];
+
+// ── CORES ──────────────────────────────────────────────────────────────────
+const BRAND_COLORS = {
+  'AllFlex':    '#378ADD',
+  '"AllFlex"':  '#639922',
+  'DataMars':   '#BA7517',
+  'UHF':        '#534AB7',
+};
+
+// ── CALCULAR SALDOS ────────────────────────────────────────────────────────
+function calcBrands() {
+  const brands = {};
+  Object.entries(estoqueInicial).forEach(([m, qtd]) => {
+    brands[m] = { inicial: qtd, retirado: 0, retornado: 0 };
+  });
+  retiradas.forEach(r => {
+    if (!brands[r.marca]) brands[r.marca] = { inicial: 0, retirado: 0, retornado: 0 };
+    brands[r.marca].retirado += r.qtd;
+  });
+  retornos.forEach(r => {
+    if (!brands[r.marca]) brands[r.marca] = { inicial: 0, retirado: 0, retornado: 0 };
+    brands[r.marca].retornado += r.qtd;
+  });
+  return Object.entries(brands).map(([marca, d]) => ({
+    marca,
+    inicial: d.inicial,
+    retirado: d.retirado,
+    retornado: d.retornado,
+    saldo: d.inicial - d.retirado + d.retornado,
+  })).sort((a, b) => b.saldo - a.saldo);
+}
+
+function getStatus(saldo) {
+  if (saldo <= 0)   return 'out';
+  if (saldo <= 100) return 'low';
+  return 'ok';
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+let chartPizza = null, chartBars = null;
+
+function render() {
+  const brands = calcBrands();
+  const totalInicial  = brands.reduce((s, b) => s + b.inicial, 0);
+  const totalRetirado = brands.reduce((s, b) => s + b.retirado, 0);
+  const totalRetornado= brands.reduce((s, b) => s + b.retornado, 0);
+  const totalSaldo    = brands.reduce((s, b) => s + b.saldo, 0);
+  const pct = Math.round((totalSaldo / totalInicial) * 100);
+
+  // Metrics
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric">
+      <div class="metric-label">Estoque inicial</div>
+      <div class="metric-value">${totalInicial.toLocaleString('pt-BR')}</div>
+      <div class="metric-sub">em 06/04/26</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Total retirado</div>
+      <div class="metric-value red">${totalRetirado.toLocaleString('pt-BR')}</div>
+      <div class="metric-sub">${retiradas.length} retiradas</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Total retornado</div>
+      <div class="metric-value green">${totalRetornado.toLocaleString('pt-BR')}</div>
+      <div class="metric-sub">${retornos.length} retornos</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Saldo atual</div>
+      <div class="metric-value">${totalSaldo.toLocaleString('pt-BR')}</div>
+      <div class="metric-sub">${pct}% do inicial</div>
+      <div class="prog-bar-bg"><div class="prog-bar" style="width:${pct}%"></div></div>
+    </div>
+  `;
+
+  // Brand cards
+  document.getElementById('brand-grid').innerHTML = brands.map(b => {
+    const st = getStatus(b.saldo);
+    const pctB = b.inicial > 0 ? Math.round((b.saldo / b.inicial) * 100) : 0;
+    const cardCls = st === 'low' ? 'alert-low' : st === 'out' ? 'alert-out' : '';
+    const badgeCls = st === 'ok' ? 'badge-ok' : st === 'low' ? 'badge-low' : 'badge-out';
+    const badgeTxt = st === 'ok' ? 'OK' : st === 'low' ? 'Baixo' : 'Zerado';
+    return `
+      <div class="brand-card ${cardCls}">
+        <div class="brand-top">
+          <div class="brand-name">${b.marca}</div>
+          <span class="badge ${badgeCls}">${badgeTxt}</span>
+        </div>
+        <div class="brand-saldo ${st}">${b.saldo.toLocaleString('pt-BR')}</div>
+        <div class="brand-pct">${pctB}% do inicial · ${b.inicial.toLocaleString('pt-BR')} un originais</div>
+        <div class="brand-stats">
+          <div class="brand-stat"><strong>${b.inicial.toLocaleString('pt-BR')}</strong><span>Inicial</span></div>
+          <div class="brand-stat"><strong class="c-red">−${b.retirado.toLocaleString('pt-BR')}</strong><span>Retirado</span></div>
+          <div class="brand-stat"><strong class="c-green">+${b.retornado.toLocaleString('pt-BR')}</strong><span>Retornado</span></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Legenda pizza
+  document.getElementById('legend-pizza').innerHTML = brands.map(b =>
+    `<span class="legend-item"><span class="legend-dot" style="background:${BRAND_COLORS[b.marca]||'#888'}"></span>${b.marca} (${b.saldo.toLocaleString('pt-BR')})</span>`
+  ).join('');
+
+  // Chart pizza
+  if (chartPizza) chartPizza.destroy();
+  chartPizza = new Chart(document.getElementById('chartPizza'), {
+    type: 'doughnut',
+    data: {
+      labels: brands.map(b => b.marca),
+      datasets: [{
+        data: brands.map(b => b.saldo),
+        backgroundColor: brands.map(b => BRAND_COLORS[b.marca] || '#888'),
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw.toLocaleString('pt-BR')} un` } }
+      }
+    }
+  });
+
+  // Chart barras
+  const barH = Math.max(220, brands.length * 56 + 70);
+  document.getElementById('chartBars').parentElement.style.height = barH + 'px';
+  if (chartBars) chartBars.destroy();
+  chartBars = new Chart(document.getElementById('chartBars'), {
+    type: 'bar',
+    data: {
+      labels: brands.map(b => b.marca),
+      datasets: [
+        { label: 'Retirado',  data: brands.map(b => b.retirado),  backgroundColor: '#E24B4A', borderRadius: 4, borderWidth: 0 },
+        { label: 'Retornado', data: brands.map(b => b.retornado), backgroundColor: '#639922', borderRadius: 4, borderWidth: 0 },
+      ]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw.toLocaleString('pt-BR')}` } }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { color: '#888', font: { size: 11 } } },
+        y: { grid: { display: false }, ticks: { color: '#888', font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Tabela movimentações
+  const movimentos = [
+    ...retiradas.map((r, i)  => ({ ...r, tipo: 'retirada', sinal: -r.qtd, idx: i,  src: 'ret' })),
+    ...retornos.map((r, i)   => ({ ...r, tipo: 'retorno',  sinal: +r.qtd, idx: i,  src: 'dev' })),
+  ].sort((a, b) => {
+    const parse = d => { const [dd, mm] = d.split('/').map(Number); return mm * 100 + dd; };
+    return parse(a.data) - parse(b.data);
+  });
+
+  document.getElementById('mov-body').innerHTML = movimentos.map(m => {
+    const isBadge = m.tipo === 'retorno' ? 'badge-ok' : 'badge-out';
+    const label   = m.tipo === 'retorno' ? '↩ Retorno' : '↗ Retirada';
+    const cls     = m.sinal > 0 ? 'c-green' : 'c-red';
+    const prefix  = m.sinal > 0 ? '+' : '';
+    return `
+      <tr>
+        <td style="color:var(--text-muted); font-variant-numeric: tabular-nums">${m.data}</td>
+        <td>${m.marca}</td>
+        <td><span class="badge ${isBadge}">${label}</span></td>
+        <td style="text-align:right; font-weight:600" class="${cls}">${prefix}${m.sinal.toLocaleString('pt-BR')}</td>
+        <td><button class="btn-del" onclick="deleteMov('${m.src}',${m.idx})" title="Remover"><i class="fa-solid fa-xmark"></i></button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ── CRUD ───────────────────────────────────────────────────────────────────
+function deleteMov(src, idx) {
+  if (!confirm('Remover essa movimentação?')) return;
+  if (src === 'ret') retiradas.splice(idx, 1);
+  else retornos.splice(idx, 1);
+  render();
+}
+
+function salvarEstoqueInicial() {
+  const marca = document.getElementById('edit-marca-est').value;
+  const qtd   = parseInt(document.getElementById('edit-qtd-est').value);
+  if (isNaN(qtd) || qtd < 0) { alert('Informe uma quantidade válida.'); return; }
+  estoqueInicial[marca] = qtd;
+  closeModal();
+  render();
+}
+
+function salvarMovimentacao() {
+  const tipo  = document.getElementById('mov-tipo').value;
+  const marca = document.getElementById('mov-marca').value;
+  const qtd   = parseInt(document.getElementById('mov-qtd').value);
+  const data  = document.getElementById('mov-data').value.trim();
+  if (isNaN(qtd) || qtd <= 0) { alert('Informe uma quantidade válida.'); return; }
+  if (!data) { alert('Informe a data.'); return; }
+  if (tipo === 'retirada') retiradas.push({ marca, qtd, data });
+  else retornos.push({ marca, qtd, data });
+  closeModal();
+  render();
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────────
+function openModal(tab) {
+  document.getElementById('modal').classList.add('open');
+  if (tab) switchTab(tab, document.querySelector(`.modal-tab:nth-child(${tab === 'mov' ? 2 : 1})`));
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
