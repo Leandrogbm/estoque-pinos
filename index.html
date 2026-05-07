@@ -159,7 +159,10 @@
     <div class="table-panel">
       <div class="table-header-row">
         <div class="sec" style="margin:0">Histórico de movimentações</div>
-        <button class="btn" onclick="openModal('mov')"><i class="fa-solid fa-plus"></i> Adicionar</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn" style="color:var(--red)" onclick="zerarHistorico()"><i class="fa-solid fa-trash-can"></i> Zerar histórico</button>
+          <button class="btn" onclick="openModal('mov')"><i class="fa-solid fa-plus"></i> Adicionar</button>
+        </div>
       </div>
       <div class="table-wrap">
         <table>
@@ -460,6 +463,22 @@ function render() {
 }
 
 // ─── CRUD ────────────────────────────────────────────────────────────────────
+async function zerarHistorico() {
+  const brands = calcBrands();
+  const linhas = brands.map(b => `• ${b.marca}: ${b.saldo.toLocaleString('pt-BR')} un`).join('\n');
+  if (!confirm(`Isso vai apagar TODO o histórico e gravar os saldos abaixo como novo estoque inicial:\n\n${linhas}\n\nEssa ação não pode ser desfeita. Continuar?`)) return;
+  brands.forEach(b => { db.estoque[b.marca] = b.saldo; });
+  db.retiradas = [];
+  db.retornos  = [];
+  render();
+  try {
+    await saveData();
+    showToast('✓ Histórico zerado. Saldos atuais gravados como inicial.');
+  } catch(e) {
+    showError('Erro ao salvar: ' + e.message);
+  }
+}
+
 async function deleteMov(tipo, idx) {
   if (!confirm('Remover essa movimentação?')) return;
   if (tipo === 'retirada') db.retiradas.splice(idx, 1);
