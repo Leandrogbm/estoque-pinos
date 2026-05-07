@@ -318,11 +318,20 @@ async function loadData() {
   setProgress(20);
   document.getElementById('main-content').style.display = 'none';
   try {
-    const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/${GITHUB_FILE}?t=` + Date.now());
-    if (!res.ok) throw new Error(`GitHub retornou ${res.status}. Verifique o token.`);
-    const json = await res.json();
+    let json;
+    if (getToken()) {
+      const res = await fetch(API_BASE, { headers: getHeaders() });
+      if (!res.ok) throw new Error(`GitHub retornou ${res.status}.`);
+      const meta = await res.json();
+      fileSHA = meta.sha;
+      json = JSON.parse(atob(meta.content.replace(/\n/g, '')));
+    } else {
+      const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/${GITHUB_FILE}?t=` + Date.now());
+      if (!res.ok) throw new Error(`GitHub retornou ${res.status}. Configure o token para acesso completo.`);
+      json = await res.json();
+      fileSHA = '';
+    }
     db = json;
-    fileSHA = '';
     setProgress(100);
     hideStatus();
     document.getElementById('ref-date').textContent = 'Atualizado em ' + new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -338,10 +347,11 @@ async function loadData() {
 
 async function saveData() {
   if (!getToken()) throw new Error('Token não configurado. Clique em "Token" para configurar.');
-  const metaRes = await fetch(API_BASE, { headers: getHeaders() });
-  if (!metaRes.ok) throw new Error('Falha ao obter SHA do arquivo: ' + metaRes.status);
-  const meta = await metaRes.json();
-  fileSHA = meta.sha;
+  if (!fileSHA) {
+    const metaRes = await fetch(API_BASE, { headers: getHeaders() });
+    if (!metaRes.ok) throw new Error('Falha ao obter SHA do arquivo: ' + metaRes.status);
+    fileSHA = (await metaRes.json()).sha;
+  }
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2))));
   const res = await fetch(API_BASE, {
     method: 'PUT',
@@ -349,8 +359,7 @@ async function saveData() {
     body: JSON.stringify({ message: 'Atualização via dashboard', content, sha: fileSHA })
   });
   if (!res.ok) throw new Error('Falha ao salvar no GitHub: ' + res.status);
-  const json = await res.json();
-  fileSHA = json.content.sha;
+  fileSHA = (await res.json()).content.sha;
 }
 
 // ─── SELECTS ────────────────────────────────────────────────────────────────
