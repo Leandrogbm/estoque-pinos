@@ -179,6 +179,7 @@
     <div class="modal-tabs">
       <button class="modal-tab active" onclick="switchTab('estoque', this)">Estoque inicial</button>
       <button class="modal-tab" onclick="switchTab('mov', this)">Movimentação</button>
+      <button class="modal-tab" onclick="switchTab('nova', this)">Nova marca</button>
     </div>
     <div class="tab-content active" id="tab-estoque">
       <div class="field-group">
@@ -192,6 +193,26 @@
       <div class="modal-actions">
         <button class="btn" onclick="closeModal()">Cancelar</button>
         <button class="btn btn-primary" id="btn-salvar-est" onclick="salvarEstoqueInicial()"><i class="fa-solid fa-check"></i> Salvar</button>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-nova">
+      <div class="field-group">
+        <label>Nome da marca</label>
+        <input type="text" id="nova-nome" placeholder="ex: Zebra" />
+      </div>
+      <div class="row2">
+        <div class="field-group">
+          <label>Quantidade inicial</label>
+          <input type="number" id="nova-qtd" placeholder="ex: 1000" min="0" />
+        </div>
+        <div class="field-group">
+          <label>Cor no gráfico</label>
+          <input type="color" id="nova-cor" value="#378ADD" style="height:40px;padding:2px 4px;cursor:pointer" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-salvar-nova" onclick="adicionarMarca()"><i class="fa-solid fa-plus"></i> Adicionar</button>
       </div>
     </div>
     <div class="tab-content" id="tab-mov">
@@ -235,7 +256,8 @@ const GITHUB_REPO  = 'estoque-pinos';
 const GITHUB_FILE  = 'data.json';
 const GITHUB_TOKEN = '';
 
-const BRAND_COLORS = { 'AllFlex': '#378ADD', '"AllFlex"': '#639922', 'DataMars': '#BA7517', 'UHF': '#534AB7' };
+const BRAND_COLORS = { 'AllFlex': '#378ADD', 'DataMars': '#BA7517', 'UHF': '#534AB7' };
+function getColor(marca) { return (db.cores && db.cores[marca]) || BRAND_COLORS[marca] || '#888'; }
 
 let db = { estoque: {}, retiradas: [], retornos: [] };
 let fileSHA = '';
@@ -252,9 +274,8 @@ function clearError()    { document.getElementById('error-area').innerHTML = '';
 function setBtnLoading(id, loading) {
   const btn = document.getElementById(id);
   btn.disabled = loading;
-  btn.innerHTML = loading
-    ? '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...'
-    : (id === 'btn-salvar-est' ? '<i class="fa-solid fa-check"></i> Salvar' : '<i class="fa-solid fa-plus"></i> Registrar');
+  const labels = { 'btn-salvar-est': '<i class="fa-solid fa-check"></i> Salvar', 'btn-salvar-mov': '<i class="fa-solid fa-plus"></i> Registrar', 'btn-salvar-nova': '<i class="fa-solid fa-plus"></i> Adicionar' };
+  btn.innerHTML = loading ? '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...' : (labels[id] || 'Salvar');
 }
 
 // ─── GITHUB API ──────────────────────────────────────────────────────────────
@@ -357,13 +378,13 @@ function render() {
   }).join('');
 
   document.getElementById('legend-pizza').innerHTML = brands.map(b =>
-    `<span class="legend-item"><span class="legend-dot" style="background:${BRAND_COLORS[b.marca]||'#888'}"></span>${b.marca} (${b.saldo.toLocaleString('pt-BR')})</span>`
+    `<span class="legend-item"><span class="legend-dot" style="background:${getColor(b.marca)}"></span>${b.marca} (${b.saldo.toLocaleString('pt-BR')})</span>`
   ).join('');
 
   if (chartPizza) chartPizza.destroy();
   chartPizza = new Chart(document.getElementById('chartPizza'), {
     type: 'doughnut',
-    data: { labels: brands.map(b => b.marca), datasets: [{ data: brands.map(b => b.saldo), backgroundColor: brands.map(b => BRAND_COLORS[b.marca]||'#888'), borderWidth: 0 }] },
+    data: { labels: brands.map(b => b.marca), datasets: [{ data: brands.map(b => b.saldo), backgroundColor: brands.map(b => getColor(b.marca)), borderWidth: 0 }] },
     options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw.toLocaleString('pt-BR')} un` } } } }
   });
 
@@ -401,6 +422,29 @@ async function deleteMov(tipo, idx) {
   render();
   try { await saveData(); showToast('✓ Movimentação removida!'); }
   catch(e) { showError('Erro ao salvar: ' + e.message); }
+}
+
+async function adicionarMarca() {
+  const nome = document.getElementById('nova-nome').value.trim();
+  const qtd  = parseInt(document.getElementById('nova-qtd').value);
+  const cor  = document.getElementById('nova-cor').value;
+  if (!nome) { alert('Informe o nome da marca.'); return; }
+  if (db.estoque[nome] !== undefined) { alert('Essa marca já existe.'); return; }
+  if (isNaN(qtd) || qtd < 0) { alert('Informe uma quantidade válida.'); return; }
+  setBtnLoading('btn-salvar-nova', true);
+  db.estoque[nome] = qtd;
+  if (!db.cores) db.cores = {};
+  db.cores[nome] = cor;
+  try {
+    await saveData();
+    closeModal();
+    populateMarcaSelects();
+    render();
+    showToast('✓ Marca adicionada!');
+    document.getElementById('nova-nome').value = '';
+    document.getElementById('nova-qtd').value = '';
+  } catch(e) { alert('Erro ao salvar: ' + e.message); }
+  finally { setBtnLoading('btn-salvar-nova', false); }
 }
 
 async function salvarEstoqueInicial() {
