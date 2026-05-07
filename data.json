@@ -1,76 +1,14 @@
 {
   "estoque": {
     "AllFlex": 4350,
-    "\"AllFlex\"": 695,
-    "DataMars": 500,
-    "UHF": 349,
+    "\"AllFlex\"": 600,
+    "DataMars": 475,
+    "UHF": 3349,
     "Brinco RFID": 190,
     "Tag Spacevis": 647
   },
-  "retiradas": [
-    {
-      "marca": "AllFlex",
-      "qtd": 356,
-      "data": "06/04"
-    },
-    {
-      "marca": "\"AllFlex\"",
-      "qtd": 100,
-      "data": "24/04"
-    },
-    {
-      "marca": "DataMars",
-      "qtd": 50,
-      "data": "24/04"
-    },
-    {
-      "marca": "AllFlex",
-      "qtd": 175,
-      "data": "24/04"
-    },
-    {
-      "marca": "AllFlex",
-      "qtd": 3824,
-      "data": "07/05"
-    },
-    {
-      "marca": "UHF",
-      "qtd": 349,
-      "data": "07/05"
-    }
-  ],
-  "retornos": [
-    {
-      "marca": "\"AllFlex\"",
-      "qtd": 5,
-      "data": "25/04"
-    },
-    {
-      "marca": "DataMars",
-      "qtd": 25,
-      "data": "25/04"
-    },
-    {
-      "marca": "AllFlex",
-      "qtd": 5,
-      "data": "25/05"
-    },
-    {
-      "marca": "AllFlex",
-      "qtd": 4350,
-      "data": "07/05"
-    },
-    {
-      "marca": "UHF",
-      "qtd": 3000,
-      "data": "07/05"
-    },
-    {
-      "marca": "UHF",
-      "qtd": 349,
-      "data": "07/05"
-    }
-  ],
+  "retiradas": [],
+  "retornos": [],
   "cores": {
     "Brinco RFID": "#dfe212",
     "Tag Spacevis": "#ed660c"
