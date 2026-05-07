@@ -113,13 +113,14 @@
     .prog-bar { height: 4px; border-radius: 2px; background: var(--green); transition: width 0.4s; }
     .footer { text-align: center; font-size: 12px; color: var(--text-faint); padding-top: 1rem; }
     .error-box { background: var(--red-bg); color: var(--red-text); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; margin-bottom: 1rem; }
+    .cat-header { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1.5px solid var(--border-strong); }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
     <div>
-      <h1>Estoque — Pinos Macho</h1>
+      <h1>Estoque — SpaceVis</h1>
       <p>Saldo atual = Estoque inicial − Retiradas + Retornos</p>
       <span class="ref-tag"><i class="fa-regular fa-calendar"></i> <span id="ref-date">Carregando...</span></span>
     </div>
@@ -138,22 +139,42 @@
   </div>
 
   <div id="main-content" style="display:none">
-    <div class="metrics" id="metrics"></div>
-    <div class="sec">Saldo por marca</div>
-    <div class="brand-grid" id="brand-grid"></div>
+    <!-- PINO MACHO -->
+    <div class="cat-header">Pino Macho</div>
+    <div class="metrics" id="metrics-pino"></div>
+    <div class="brand-grid" id="brand-grid-pino"></div>
     <div class="charts-row">
       <div class="chart-panel">
-        <div class="sec">Distribuição do saldo</div>
-        <div class="legend" id="legend-pizza"></div>
-        <div class="chart-wrap"><canvas id="chartPizza"></canvas></div>
+        <div class="sec">Distribuição — Pino Macho</div>
+        <div class="legend" id="legend-pizza-pino"></div>
+        <div class="chart-wrap"><canvas id="chartPizza-pino"></canvas></div>
       </div>
       <div class="chart-panel">
-        <div class="sec">Retiradas vs Retornos</div>
+        <div class="sec">Retiradas vs Retornos — Pino Macho</div>
         <div class="legend">
           <span class="legend-item"><span class="legend-dot" style="background:#E24B4A"></span>Retirado</span>
           <span class="legend-item"><span class="legend-dot" style="background:#639922"></span>Retornado</span>
         </div>
-        <div class="chart-wrap"><canvas id="chartBars"></canvas></div>
+        <div class="chart-wrap"><canvas id="chartBars-pino"></canvas></div>
+      </div>
+    </div>
+    <!-- TAGs -->
+    <div class="cat-header" style="margin-top:2rem">TAGs</div>
+    <div class="metrics" id="metrics-tag"></div>
+    <div class="brand-grid" id="brand-grid-tag"></div>
+    <div class="charts-row">
+      <div class="chart-panel">
+        <div class="sec">Distribuição — TAGs</div>
+        <div class="legend" id="legend-pizza-tag"></div>
+        <div class="chart-wrap"><canvas id="chartPizza-tag"></canvas></div>
+      </div>
+      <div class="chart-panel">
+        <div class="sec">Retiradas vs Retornos — TAGs</div>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#E24B4A"></span>Retirado</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#639922"></span>Retornado</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartBars-tag"></canvas></div>
       </div>
     </div>
     <div class="table-panel">
@@ -203,6 +224,13 @@
       <div class="field-group">
         <label>Nome da marca</label>
         <input type="text" id="nova-nome" placeholder="ex: Zebra" />
+      </div>
+      <div class="field-group">
+        <label>Categoria</label>
+        <select id="nova-cat">
+          <option value="pino">Pino Macho</option>
+          <option value="tag">TAG</option>
+        </select>
       </div>
       <div class="row2">
         <div class="field-group">
@@ -292,9 +320,11 @@ function updateTokenBtn() {
 const BRAND_COLORS = { 'AllFlex': '#378ADD', 'DataMars': '#BA7517', 'UHF': '#534AB7' };
 function getColor(marca) { return (db.cores && db.cores[marca]) || BRAND_COLORS[marca] || '#888'; }
 
+const DEFAULT_CATS = { 'AllFlex': 'pino', '"AllFlex"': 'pino', 'DataMars': 'pino', 'UHF': 'pino', 'Brinco RFID': 'tag', 'Tag Spacevis': 'tag' };
+function getCat(marca) { return (db.categorias && db.categorias[marca]) || DEFAULT_CATS[marca] || 'pino'; }
+
 let db = { estoque: {}, retiradas: [], retornos: [] };
 let fileSHA = '';
-let chartPizza = null, chartBars = null;
 
 // ─── UI HELPERS ─────────────────────────────────────────────────────────────
 function showStatus(msg) { document.getElementById('status-msg').style.display = 'flex'; document.getElementById('status-text').textContent = msg; }
@@ -394,22 +424,27 @@ function calcBrands() {
 function getStatus(s) { return s <= 0 ? 'out' : s <= 100 ? 'low' : 'ok'; }
 
 // ─── RENDER ──────────────────────────────────────────────────────────────────
-function render() {
-  const brands = calcBrands();
-  const tI = brands.reduce((s, b) => s + b.inicial, 0);
-  const tR = brands.reduce((s, b) => s + b.retirado, 0);
-  const tD = brands.reduce((s, b) => s + b.retornado, 0);
-  const tS = brands.reduce((s, b) => s + b.saldo, 0);
-  const pct = tI > 0 ? Math.round(tS / tI * 100) : 0;
+const charts = {};
 
-  document.getElementById('metrics').innerHTML = `
-    <div class="metric"><div class="metric-label">Estoque inicial</div><div class="metric-value">${tI.toLocaleString('pt-BR')}</div><div class="metric-sub">${Object.keys(db.estoque).length} marcas</div></div>
-    <div class="metric"><div class="metric-label">Total retirado</div><div class="metric-value red">${tR.toLocaleString('pt-BR')}</div><div class="metric-sub">${(db.retiradas||[]).length} retiradas</div></div>
-    <div class="metric"><div class="metric-label">Total retornado</div><div class="metric-value green">${tD.toLocaleString('pt-BR')}</div><div class="metric-sub">${(db.retornos||[]).length} retornos</div></div>
+function renderCategoria(cat, brands) {
+  const suffix = cat === 'pino' ? '-pino' : '-tag';
+  const grupo = brands.filter(b => getCat(b.marca) === cat);
+  const tI = grupo.reduce((s, b) => s + b.inicial, 0);
+  const tR = grupo.reduce((s, b) => s + b.retirado, 0);
+  const tD = grupo.reduce((s, b) => s + b.retornado, 0);
+  const tS = grupo.reduce((s, b) => s + b.saldo, 0);
+  const pct = tI > 0 ? Math.round(tS / tI * 100) : 0;
+  const nRet = (db.retiradas||[]).filter(r => getCat(r.marca) === cat).length;
+  const nRet2 = (db.retornos||[]).filter(r => getCat(r.marca) === cat).length;
+
+  document.getElementById('metrics' + suffix).innerHTML = `
+    <div class="metric"><div class="metric-label">Estoque inicial</div><div class="metric-value">${tI.toLocaleString('pt-BR')}</div><div class="metric-sub">${grupo.length} marca(s)</div></div>
+    <div class="metric"><div class="metric-label">Total retirado</div><div class="metric-value red">${tR.toLocaleString('pt-BR')}</div><div class="metric-sub">${nRet} retiradas</div></div>
+    <div class="metric"><div class="metric-label">Total retornado</div><div class="metric-value green">${tD.toLocaleString('pt-BR')}</div><div class="metric-sub">${nRet2} retornos</div></div>
     <div class="metric"><div class="metric-label">Saldo atual</div><div class="metric-value">${tS.toLocaleString('pt-BR')}</div><div class="metric-sub">${pct}% do inicial</div><div class="prog-bar-bg"><div class="prog-bar" style="width:${pct}%"></div></div></div>
   `;
 
-  document.getElementById('brand-grid').innerHTML = brands.map(b => {
+  document.getElementById('brand-grid' + suffix).innerHTML = grupo.map(b => {
     const st = getStatus(b.saldo);
     const pB = b.inicial > 0 ? Math.round(b.saldo / b.inicial * 100) : 0;
     return `<div class="brand-card ${st==='low'?'alert-low':st==='out'?'alert-out':''}">
@@ -422,28 +457,34 @@ function render() {
         <div class="brand-stat"><strong class="c-green">+${b.retornado.toLocaleString('pt-BR')}</strong><span>Retornado</span></div>
       </div>
     </div>`;
-  }).join('');
+  }).join('') || '<p style="color:var(--text-faint);font-size:13px;padding:8px 0">Nenhuma marca nesta categoria.</p>';
 
-  document.getElementById('legend-pizza').innerHTML = brands.map(b =>
+  document.getElementById('legend-pizza' + suffix).innerHTML = grupo.map(b =>
     `<span class="legend-item"><span class="legend-dot" style="background:${getColor(b.marca)}"></span>${b.marca} (${b.saldo.toLocaleString('pt-BR')})</span>`
   ).join('');
 
-  if (chartPizza) chartPizza.destroy();
-  chartPizza = new Chart(document.getElementById('chartPizza'), {
+  if (charts['pizza' + suffix]) charts['pizza' + suffix].destroy();
+  charts['pizza' + suffix] = new Chart(document.getElementById('chartPizza' + suffix), {
     type: 'doughnut',
-    data: { labels: brands.map(b => b.marca), datasets: [{ data: brands.map(b => b.saldo), backgroundColor: brands.map(b => getColor(b.marca)), borderWidth: 0 }] },
+    data: { labels: grupo.map(b => b.marca), datasets: [{ data: grupo.map(b => b.saldo), backgroundColor: grupo.map(b => getColor(b.marca)), borderWidth: 0 }] },
     options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw.toLocaleString('pt-BR')} un` } } } }
   });
 
-  if (chartBars) chartBars.destroy();
-  chartBars = new Chart(document.getElementById('chartBars'), {
+  if (charts['bars' + suffix]) charts['bars' + suffix].destroy();
+  charts['bars' + suffix] = new Chart(document.getElementById('chartBars' + suffix), {
     type: 'bar',
-    data: { labels: brands.map(b => b.marca), datasets: [
-      { label: 'Retirado',  data: brands.map(b => b.retirado),  backgroundColor: '#E24B4A', borderRadius: 4, borderWidth: 0 },
-      { label: 'Retornado', data: brands.map(b => b.retornado), backgroundColor: '#639922', borderRadius: 4, borderWidth: 0 }
+    data: { labels: grupo.map(b => b.marca), datasets: [
+      { label: 'Retirado',  data: grupo.map(b => b.retirado),  backgroundColor: '#E24B4A', borderRadius: 4, borderWidth: 0 },
+      { label: 'Retornado', data: grupo.map(b => b.retornado), backgroundColor: '#639922', borderRadius: 4, borderWidth: 0 }
     ]},
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { color: '#888', font: { size: 11 } } }, y: { grid: { display: false }, ticks: { color: '#888', font: { size: 11 } } } } }
   });
+}
+
+function render() {
+  const brands = calcBrands();
+  renderCategoria('pino', brands);
+  renderCategoria('tag', brands);
 
   const movs = [
     ...(db.retiradas||[]).map((r,i) => ({ ...r, tipo: 'retirada', sinal: -r.qtd, idx: i })),
@@ -495,10 +536,13 @@ async function adicionarMarca() {
   if (!nome) { alert('Informe o nome da marca.'); return; }
   if (db.estoque[nome] !== undefined) { alert('Essa marca já existe.'); return; }
   if (isNaN(qtd) || qtd < 0) { alert('Informe uma quantidade válida.'); return; }
+  const cat = document.getElementById('nova-cat').value;
   setBtnLoading('btn-salvar-nova', true);
   db.estoque[nome] = qtd;
   if (!db.cores) db.cores = {};
   db.cores[nome] = cor;
+  if (!db.categorias) db.categorias = {};
+  db.categorias[nome] = cat;
   try {
     await saveData();
     closeModal();
