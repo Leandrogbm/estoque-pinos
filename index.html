@@ -163,7 +163,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Data</th><th>Marca</th><th>Tipo</th><th style="text-align:right">Qtd</th><th></th></tr></thead>
+          <thead><tr><th>Data</th><th>Marca</th><th>Tipo</th><th style="text-align:right">Qtd</th><th>Observação</th><th></th></tr></thead>
           <tbody id="mov-body"></tbody>
         </table>
       </div>
@@ -220,7 +220,7 @@
       <div class="row2">
         <div class="field-group">
           <label>Tipo</label>
-          <select id="mov-tipo">
+          <select id="mov-tipo" onchange="document.getElementById('mov-obs-group').style.display=this.value==='retirada'?'':'none'">
             <option value="retirada">Retirada</option>
             <option value="retorno">Retorno</option>
           </select>
@@ -239,6 +239,10 @@
           <label>Data (ex: 07/05)</label>
           <input type="text" id="mov-data" placeholder="07/05" />
         </div>
+      </div>
+      <div class="field-group" id="mov-obs-group">
+        <label>Observação (opcional)</label>
+        <input type="text" id="mov-obs" placeholder="ex: Enviado para obra X" maxlength="120" />
       </div>
       <div class="modal-actions">
         <button class="btn" onclick="closeModal()">Cancelar</button>
@@ -435,12 +439,13 @@ function render() {
   ].sort((a, b) => { const p = d => { const [dd,mm] = String(d).split('/').map(Number); return (mm||0)*100+(dd||0); }; return p(a.data)-p(b.data); });
 
   document.getElementById('mov-body').innerHTML = movs.length === 0
-    ? `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-faint)">Nenhuma movimentação registrada</td></tr>`
+    ? `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-faint)">Nenhuma movimentação registrada</td></tr>`
     : movs.map(m => `<tr>
         <td style="color:var(--text-muted)">${m.data}</td>
         <td>${m.marca}</td>
         <td><span class="badge ${m.tipo==='retorno'?'badge-ok':'badge-out'}">${m.tipo==='retorno'?'↩ Retorno':'↗ Retirada'}</span></td>
         <td style="text-align:right;font-weight:600" class="${m.sinal>0?'c-green':'c-red'}">${m.sinal>0?'+':''}${m.sinal.toLocaleString('pt-BR')}</td>
+        <td style="color:var(--text-muted);font-size:12px;max-width:200px">${m.obs ? `<span title="${m.obs}">${m.obs.length > 40 ? m.obs.slice(0,40)+'…' : m.obs}</span>` : '—'}</td>
         <td><button class="btn-del" onclick="deleteMov('${m.tipo}',${m.idx})" title="Remover"><i class="fa-solid fa-xmark"></i></button></td>
       </tr>`).join('');
 }
@@ -494,11 +499,13 @@ async function salvarMovimentacao() {
   const marca = document.getElementById('mov-marca').value;
   const qtd   = parseInt(document.getElementById('mov-qtd').value);
   const data  = document.getElementById('mov-data').value.trim();
+  const obs   = document.getElementById('mov-obs').value.trim();
   if (isNaN(qtd) || qtd <= 0) { alert('Informe uma quantidade válida.'); return; }
   if (!data) { alert('Informe a data.'); return; }
   setBtnLoading('btn-salvar-mov', true);
-  if (tipo === 'retirada') db.retiradas.push({ marca, qtd, data });
-  else db.retornos.push({ marca, qtd, data });
+  const entry = { marca, qtd, data, ...(obs && { obs }) };
+  if (tipo === 'retirada') db.retiradas.push(entry);
+  else db.retornos.push(entry);
   try { await saveData(); closeModal(); render(); showToast(`✓ ${tipo==='retirada'?'Retirada':'Retorno'} salvo!`); }
   catch(e) { alert('Erro ao salvar: ' + e.message); }
   finally { setBtnLoading('btn-salvar-mov', false); }
