@@ -450,12 +450,7 @@ function renderCategoria(cat, brands) {
     return `<div class="brand-card ${st==='low'?'alert-low':st==='out'?'alert-out':''}">
       <div class="brand-top"><div class="brand-name">${b.marca}</div><span class="badge badge-${st}">${st==='ok'?'OK':st==='low'?'Baixo':'Zerado'}</span></div>
       <div class="brand-saldo ${st}">${b.saldo.toLocaleString('pt-BR')}</div>
-      <div class="brand-pct">${pB}% do inicial · ${b.inicial.toLocaleString('pt-BR')} un originais</div>
-      <div class="brand-stats">
-        <div class="brand-stat"><strong>${b.inicial.toLocaleString('pt-BR')}</strong><span>Inicial</span></div>
-        <div class="brand-stat"><strong class="c-red">−${b.retirado.toLocaleString('pt-BR')}</strong><span>Retirado</span></div>
-        <div class="brand-stat"><strong class="c-green">+${b.retornado.toLocaleString('pt-BR')}</strong><span>Retornado</span></div>
-      </div>
+      <div class="brand-pct" style="margin-bottom:0">${pB}% do inicial</div>
     </div>`;
   }).join('') || '<p style="color:var(--text-faint);font-size:13px;padding:8px 0">Nenhuma marca nesta categoria.</p>';
 
