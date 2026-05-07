@@ -267,7 +267,7 @@ async function loadData() {
   setProgress(20);
   document.getElementById('main-content').style.display = 'none';
   try {
-    const res  = await fetch(API_BASE + '?t=' + Date.now(), { headers: HEADERS });
+    const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/${GITHUB_FILE}?t=` + Date.now());
     if (!res.ok) throw new Error(`GitHub retornou ${res.status}. Verifique o token.`);
     const json = await res.json();
     fileSHA = json.sha;
