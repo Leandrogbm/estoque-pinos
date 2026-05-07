@@ -62,6 +62,11 @@
       "marca": "UHF",
       "qtd": 3000,
       "data": "07/05"
+    },
+    {
+      "marca": "DataMars",
+      "qtd": 349,
+      "data": "07/05"
     }
   ]
 }
