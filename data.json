@@ -1,0 +1,19 @@
+{
+  "estoque": {
+    "AllFlex": 4724,
+    "\"AllFlex\"": 695,
+    "DataMars": 500,
+    "UHF": 349
+  },
+  "retiradas": [
+    {"marca": "AllFlex", "qtd": 356, "data": "06/04"},
+    {"marca": "\"AllFlex\"", "qtd": 100, "data": "24/04"},
+    {"marca": "DataMars", "qtd": 50, "data": "24/04"},
+    {"marca": "AllFlex", "qtd": 175, "data": "24/04"}
+  ],
+  "retornos": [
+    {"marca": "\"AllFlex\"", "qtd": 5, "data": "25/04"},
+    {"marca": "DataMars", "qtd": 25, "data": "25/04"},
+    {"marca": "AllFlex", "qtd": 5, "data": "25/05"}
+  ]
+}
