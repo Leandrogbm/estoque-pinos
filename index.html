@@ -270,8 +270,8 @@ async function loadData() {
     const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/${GITHUB_FILE}?t=` + Date.now());
     if (!res.ok) throw new Error(`GitHub retornou ${res.status}. Verifique o token.`);
     const json = await res.json();
-    fileSHA = json.sha;
-    db = JSON.parse(atob(json.content.replace(/\n/g, '')));
+    db = json;
+    fileSHA = '';
     setProgress(100);
     hideStatus();
     document.getElementById('ref-date').textContent = 'Atualizado em ' + new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
