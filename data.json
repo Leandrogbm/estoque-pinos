@@ -3,7 +3,8 @@
     "AllFlex": 4350,
     "\"AllFlex\"": 695,
     "DataMars": 500,
-    "UHF": 349
+    "UHF": 349,
+    "Brinco RFID": 190
   },
   "retiradas": [
     {
@@ -68,5 +69,8 @@
       "qtd": 349,
       "data": "07/05"
     }
-  ]
+  ],
+  "cores": {
+    "Brinco RFID": "#dfe212"
+  }
 }
