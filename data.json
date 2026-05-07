@@ -4,7 +4,8 @@
     "\"AllFlex\"": 695,
     "DataMars": 500,
     "UHF": 349,
-    "Brinco RFID": 190
+    "Brinco RFID": 190,
+    "Tag Spacevis": 647
   },
   "retiradas": [
     {
@@ -71,6 +72,7 @@
     }
   ],
   "cores": {
-    "Brinco RFID": "#dfe212"
+    "Brinco RFID": "#dfe212",
+    "Tag Spacevis": "#ed660c"
   }
 }
