@@ -114,6 +114,51 @@
     .footer { text-align: center; font-size: 12px; color: var(--text-faint); padding-top: 1rem; }
     .error-box { background: var(--red-bg); color: var(--red-text); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; margin-bottom: 1rem; }
     .cat-header { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1.5px solid var(--border-strong); }
+
+    /* ── TABLET ─────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .container { max-width: 100%; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .brand-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+      .chart-wrap { height: 180px; }
+    }
+
+    /* ── MOBILE ─────────────────────────────────────────── */
+    @media (max-width: 540px) {
+      body { padding: 1rem 0.75rem; }
+      .header { gap: 8px; margin-bottom: 1.25rem; }
+      .header h1 { font-size: 18px; }
+      .header p { font-size: 12px; }
+      .btn { padding: 8px 10px; font-size: 12px; gap: 5px; }
+      .btn .btn-label { display: none; }
+      .metrics { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .metric { padding: 12px 14px; }
+      .metric-value { font-size: 22px; }
+      .brand-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .brand-card { padding: 14px 14px; }
+      .brand-saldo { font-size: 26px; }
+      .charts-row { grid-template-columns: 1fr; }
+      .chart-wrap { height: 160px; }
+      .chart-panel { padding: 14px; }
+      .table-panel { padding: 14px; }
+      .table-header-row { flex-direction: column; align-items: flex-start; }
+      .table-header-row > div { width: 100%; justify-content: flex-end; }
+      th, td { padding: 8px 8px; font-size: 12px; }
+      .modal { padding: 16px; }
+      .modal-tabs { flex-wrap: wrap; }
+      .modal-tab { font-size: 12px; padding: 8px 6px; }
+      .row2 { grid-template-columns: 1fr; }
+      .modal-actions { flex-wrap: wrap; }
+      .modal-actions .btn { flex: 1; justify-content: center; }
+      .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+      .cat-header { font-size: 13px; }
+    }
+
+    /* ── MOBILE PEQUENO ─────────────────────────────────── */
+    @media (max-width: 360px) {
+      .brand-grid { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -125,9 +170,9 @@
       <span class="ref-tag"><i class="fa-regular fa-calendar"></i> <span id="ref-date">Carregando...</span></span>
     </div>
     <div class="btn-group">
-      <button class="btn" onclick="loadData()"><i class="fa-solid fa-rotate-right"></i> Atualizar</button>
-      <button class="btn" id="btn-token" onclick="openTokenModal()"><i class="fa-solid fa-key"></i> Token</button>
-      <button class="btn btn-primary" onclick="openModal()"><i class="fa-solid fa-pen-to-square"></i> Editar dados</button>
+      <button class="btn" onclick="loadData()"><i class="fa-solid fa-rotate-right"></i><span class="btn-label"> Atualizar</span></button>
+      <button class="btn" id="btn-token" onclick="openTokenModal()"><i class="fa-solid fa-key"></i><span class="btn-label"> Token</span></button>
+      <button class="btn btn-primary" onclick="openModal()"><i class="fa-solid fa-pen-to-square"></i><span class="btn-label"> Editar dados</span></button>
     </div>
   </div>
 
