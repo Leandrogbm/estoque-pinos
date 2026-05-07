@@ -333,8 +333,12 @@ async function loadData() {
 }
 
 async function saveData() {
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2))));
   if (!getToken()) throw new Error('Token não configurado. Clique em "Token" para configurar.');
+  const metaRes = await fetch(API_BASE, { headers: getHeaders() });
+  if (!metaRes.ok) throw new Error('Falha ao obter SHA do arquivo: ' + metaRes.status);
+  const meta = await metaRes.json();
+  fileSHA = meta.sha;
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2))));
   const res = await fetch(API_BASE, {
     method: 'PUT',
     headers: getHeaders(),
