@@ -125,6 +125,7 @@
     </div>
     <div class="btn-group">
       <button class="btn" onclick="loadData()"><i class="fa-solid fa-rotate-right"></i> Atualizar</button>
+      <button class="btn" id="btn-token" onclick="openTokenModal()"><i class="fa-solid fa-key"></i> Token</button>
       <button class="btn btn-primary" onclick="openModal()"><i class="fa-solid fa-pen-to-square"></i> Editar dados</button>
     </div>
   </div>
@@ -247,6 +248,26 @@
   </div>
 </div>
 
+<!-- MODAL TOKEN -->
+<div class="modal-backdrop" id="modal-token">
+  <div class="modal" style="max-width:420px">
+    <h2><i class="fa-solid fa-key"></i> Token do GitHub</h2>
+    <p>O token é salvo apenas no seu navegador (localStorage) e nunca vai para o código.</p>
+    <div class="field-group">
+      <label>Personal Access Token</label>
+      <input type="password" id="token-input" placeholder="ghp_..." autocomplete="off" />
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-top:-8px;margin-bottom:16px">
+      Precisa da permissão <strong>Contents: Read &amp; Write</strong> no repositório.
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeTokenModal()">Cancelar</button>
+      <button class="btn" onclick="limparToken()" style="color:var(--red)"><i class="fa-solid fa-trash"></i> Limpar</button>
+      <button class="btn btn-primary" onclick="salvarToken()"><i class="fa-solid fa-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -254,7 +275,12 @@
 const GITHUB_OWNER = 'Leandrogbm';
 const GITHUB_REPO  = 'estoque-pinos';
 const GITHUB_FILE  = 'data.json';
-const GITHUB_TOKEN = '';
+function getToken() { return localStorage.getItem('gh_token') || ''; }
+function updateTokenBtn() {
+  const btn = document.getElementById('btn-token');
+  if (getToken()) { btn.style.color = 'var(--green)'; btn.title = 'Token configurado'; }
+  else { btn.style.color = 'var(--red)'; btn.title = 'Token não configurado'; }
+}
 
 const BRAND_COLORS = { 'AllFlex': '#378ADD', 'DataMars': '#BA7517', 'UHF': '#534AB7' };
 function getColor(marca) { return (db.cores && db.cores[marca]) || BRAND_COLORS[marca] || '#888'; }
@@ -280,7 +306,7 @@ function setBtnLoading(id, loading) {
 
 // ─── GITHUB API ──────────────────────────────────────────────────────────────
 const API_BASE = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
-const HEADERS  = { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' };
+function getHeaders() { return { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' }; }
 
 async function loadData() {
   clearError();
@@ -308,9 +334,10 @@ async function loadData() {
 
 async function saveData() {
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2))));
+  if (!getToken()) throw new Error('Token não configurado. Clique em "Token" para configurar.');
   const res = await fetch(API_BASE, {
     method: 'PUT',
-    headers: HEADERS,
+    headers: getHeaders(),
     body: JSON.stringify({ message: 'Atualização via dashboard', content, sha: fileSHA })
   });
   if (!res.ok) throw new Error('Falha ao salvar no GitHub: ' + res.status);
@@ -473,6 +500,29 @@ async function salvarMovimentacao() {
   finally { setBtnLoading('btn-salvar-mov', false); }
 }
 
+// ─── MODAL TOKEN ─────────────────────────────────────────────────────────────
+function openTokenModal() {
+  document.getElementById('token-input').value = getToken();
+  document.getElementById('modal-token').classList.add('open');
+}
+function closeTokenModal() { document.getElementById('modal-token').classList.remove('open'); }
+function salvarToken() {
+  const t = document.getElementById('token-input').value.trim();
+  if (!t) { alert('Informe o token.'); return; }
+  localStorage.setItem('gh_token', t);
+  closeTokenModal();
+  updateTokenBtn();
+  showToast('✓ Token salvo no navegador!');
+}
+function limparToken() {
+  localStorage.removeItem('gh_token');
+  document.getElementById('token-input').value = '';
+  closeTokenModal();
+  updateTokenBtn();
+  showToast('Token removido.');
+}
+document.getElementById('modal-token').addEventListener('click', e => { if (e.target === e.currentTarget) closeTokenModal(); });
+
 // ─── MODAL ───────────────────────────────────────────────────────────────────
 function openModal(tab) { document.getElementById('modal').classList.add('open'); if (tab) switchTab(tab, document.querySelector(`.modal-tab:nth-child(${tab==='mov'?2:1})`)); }
 function closeModal()   { document.getElementById('modal').classList.remove('open'); }
@@ -484,6 +534,7 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
 }
 
+updateTokenBtn();
 loadData();
 </script>
 </body>
