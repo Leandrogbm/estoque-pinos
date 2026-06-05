@@ -7,7 +7,14 @@
     "Brinco RFID": 190,
     "Tag Spacevis": 647
   },
-  "retiradas": [],
+  "retiradas": [
+    {
+      "marca": "AllFlex",
+      "qtd": 1500,
+      "data": "02/06",
+      "obs": "Fazenda Veredas"
+    }
+  ],
   "retornos": [],
   "cores": {
     "Brinco RFID": "#dfe212",
