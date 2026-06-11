@@ -13,6 +13,12 @@
       "qtd": 1500,
       "data": "02/06",
       "obs": "Fazenda Veredas"
+    },
+    {
+      "marca": "AllFlex",
+      "qtd": 650,
+      "data": "08/06",
+      "obs": "Fazenda Facchini"
     }
   ],
   "retornos": [],
